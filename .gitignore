@@ -1,0 +1,33 @@
+# Python-generated files
+__pycache__/
+*.py[oc]
+build/
+dist/
+wheels/
+*.egg-info
+
+# Virtual environments
+.venv
+
+.vscode
+
+.claude
+
+
+
+#llm's
+.llm/
+
+# Data files (don't commit large datasets)
+data/raw/*.csv
+data/processed/*.parquet
+
+# Model artifacts
+models/*.joblib
+models/*.pkl
+
+# Outputs
+outputs/
+
+# Jupyter notebook checkpoints
+.ipynb_checkpoints/
