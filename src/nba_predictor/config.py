@@ -42,3 +42,55 @@ LOGISTIC_REGRESSION_PARAMS = {
     "solver": "lbfgs",
     "class_weight": None  # No class balancing for baseline
 }
+
+# ==========================================
+# FEATURE ENGINEERING CONFIGURATION (v1.1)
+# ==========================================
+
+# Rolling window parameters
+ROLLING_WINDOW_SIZE = 10  # Last N games for rolling statistics
+H2H_WINDOW_SIZE = 5       # Last N head-to-head matchups
+
+# Season column
+SEASON_COL = "SEASON"
+
+# Game statistics columns (from raw dataset)
+GAME_STATS_COLS = {
+    'home': ['FG_PCT_home', 'FT_PCT_home', 'FG3_PCT_home'],
+    'away': ['FG_PCT_away', 'FT_PCT_away', 'FG3_PCT_away']
+}
+
+# Feature groups (for tracking and ablation studies)
+FEATURE_GROUPS = {
+    'baseline': [HOME_TEAM_COL, VISITOR_TEAM_COL],
+    'season': [SEASON_COL],
+    'rolling_record': ['home_win_pct_L10', 'away_win_pct_L10'],
+    'rolling_performance': [
+        'home_fg_pct_L10', 'away_fg_pct_L10',
+        'home_fg3_pct_L10', 'away_fg3_pct_L10',
+        'home_ft_pct_L10', 'away_ft_pct_L10',
+        'home_pt_diff_L10', 'away_pt_diff_L10'
+    ],
+    'rest': ['home_rest_days', 'away_rest_days',
+             'home_back_to_back', 'away_back_to_back'],
+    'streak': ['home_win_streak', 'away_win_streak'],
+    'h2h': ['home_h2h_win_pct', 'home_h2h_pt_diff']
+}
+
+# All engineered features (flattened)
+ENGINEERED_FEATURE_COLS = (
+    FEATURE_GROUPS['baseline'] +
+    FEATURE_GROUPS['season'] +
+    FEATURE_GROUPS['rolling_record'] +
+    FEATURE_GROUPS['rolling_performance'] +
+    FEATURE_GROUPS['rest'] +
+    FEATURE_GROUPS['streak'] +
+    FEATURE_GROUPS['h2h']
+)
+
+# Feature-engineered output files
+TRAIN_FEATURES_FILE = PROCESSED_DATA_DIR / "train_features.parquet"
+TEST_FEATURES_FILE = PROCESSED_DATA_DIR / "test_features.parquet"
+
+# v1.1 Model path
+MODEL_V1_1_PATH = MODELS_DIR / "model_v1_1.joblib"

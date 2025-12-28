@@ -146,7 +146,7 @@ def split_data(
 
     print(f"Train: {len(train_df):,} games ({train_df[config.GAME_DATE_COL].min().date()} to {actual_max_train_date.date()})")
     print(f"Test:  {len(test_df):,} games ({min_test_date.date()} to {test_df[config.GAME_DATE_COL].max().date()})")
-    print("✓ No data leakage detected (train dates < test dates)")
+    print("[OK] No data leakage detected (train dates < test dates)")
 
     return train_df, test_df
 
@@ -166,20 +166,39 @@ def save_processed_data(train_df: pd.DataFrame, test_df: pd.DataFrame) -> None:
     train_df.to_parquet(config.TRAIN_FILE, index=False)
     test_df.to_parquet(config.TEST_FILE, index=False)
 
-    print(f"✓ Train data saved to: {config.TRAIN_FILE}")
-    print(f"✓ Test data saved to: {config.TEST_FILE}")
+    print(f"[OK] Train data saved to: {config.TRAIN_FILE}")
+    print(f"[OK] Test data saved to: {config.TEST_FILE}")
+
+
+def save_processed_data_with_features(train_df: pd.DataFrame, test_df: pd.DataFrame) -> None:
+    """Save feature-engineered train/test sets to parquet format.
+
+    Args:
+        train_df: Training data with engineered features
+        test_df: Test data with engineered features
+    """
+    # Create output directory if needed
+    config.PROCESSED_DATA_DIR.mkdir(parents=True, exist_ok=True)
+
+    # Save to parquet
+    print(f"\nSaving feature-engineered data...")
+    train_df.to_parquet(config.TRAIN_FEATURES_FILE, index=False)
+    test_df.to_parquet(config.TEST_FEATURES_FILE, index=False)
+
+    print(f"[OK] Train features saved to: {config.TRAIN_FEATURES_FILE}")
+    print(f"[OK] Test features saved to: {config.TEST_FEATURES_FILE}")
 
 
 def preprocess_data() -> None:
-    """Main preprocessing pipeline.
+    """Main preprocessing pipeline with v1.1 feature engineering.
 
-    Loads raw data, creates labels, splits with time-based validation,
-    and saves processed datasets.
+    Loads raw data, creates labels, engineers features, splits with
+    time-based validation, and saves processed datasets.
 
     Can be run as: uv run python -m nba_predictor.data_prep
     """
     print("=" * 60)
-    print("NBA Predictor - Data Preprocessing")
+    print("NBA Predictor - Data Preprocessing v1.1")
     print("=" * 60)
 
     try:
@@ -190,20 +209,37 @@ def preprocess_data() -> None:
         print("\nCreating labels...")
         df = create_label(df)
 
-        # Split data with time-based validation
-        train_df, test_df = split_data(df)
+        # ===== NEW: FEATURE ENGINEERING (BEFORE SPLIT) =====
+        print("\nEngineering features...")
+        print("  This may take a few minutes...")
 
-        # Save processed data
-        save_processed_data(train_df, test_df)
+        from .feature_engineering import engineer_all_features, validate_engineered_features
+
+        feature_config = {
+            'rolling_window': config.ROLLING_WINDOW_SIZE,
+            'h2h_window': config.H2H_WINDOW_SIZE
+        }
+
+        df_with_features = engineer_all_features(df, feature_config)
+        print(f"[OK] Added {len(config.ENGINEERED_FEATURE_COLS)} features")
+
+        # ===== THEN SPLIT (preserves temporal causality) =====
+        train_df, test_df = split_data(df_with_features)
+
+        # Validate features
+        validate_engineered_features(train_df, test_df)
+
+        # Save processed data with features
+        save_processed_data_with_features(train_df, test_df)
 
         print("\n" + "=" * 60)
         print("Preprocessing complete!")
         print("=" * 60)
-        print("\nNext step: Train model with")
-        print("  uv run python -m nba_predictor.train_baseline")
+        print("\nNext step: Train v1.1 models with")
+        print("  uv run python -m nba_predictor.train_v1_1")
 
     except Exception as e:
-        print(f"\n❌ Error during preprocessing: {e}")
+        print(f"\n[ERROR] Error during preprocessing: {e}")
         raise
 
 

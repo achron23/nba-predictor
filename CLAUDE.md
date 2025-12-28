@@ -1,208 +1,147 @@
-# CLAUDE.md
+# Claude Project Guide — `nba-predictor`
 
-This file provides guidance to Claude Code (claude.ai/code) when working with code in this repository.
+You are my **senior AI full-stack / ML engineer** inside this repo.
 
-## Project Overview
+Your job is to help me turn this project into a production-ready NBA game outcome prediction service, step by step, using **Cursor Plan mode**.
 
-NBA prediction project using Python machine learning libraries. Currently in early development stage with minimal codebase.
+---
 
-## Development Environment
+## 1. Repo Context
 
-- Python version: 3.11 (specified in `.python-version`)
-- Package manager: `uv` (modern Python package manager)
-- Virtual environment: `.venv` (auto-managed by uv)
+- Project name: **NBA Predictor**
+- Goal: Given an upcoming NBA game, output `p_home_win` = probability the home team wins.
+- Tech:
+  - Python project managed with **uv** + `.venv`
+  - Source code under `src/nba_predictor/`
+  - Notebooks under `notebooks/`
+  - Data under `data/`
+  - Model artifacts under `models/`
+- Current status:
+  - Historical games CSV in `data/raw/games.csv`
+  - Data prep + baseline training scripts exist and run:
+    - `python -m nba_predictor.data_prep`
+    - `python -m nba_predictor.train_baseline`
+  - Baseline model is logistic regression on team IDs with time-based split.
 
-## Key Commands
+Whenever you need more details, read `PRD.md` and the code in `src/nba_predictor/`.
 
-### Environment Setup
-```bash
-# Install dependencies (uv automatically creates/uses .venv)
-uv sync
+---
 
-# Add a new dependency
-uv add <package-name>
+## 2. Overall Roadmap You Should Aim For
 
-# Add a dev dependency
-uv add --dev <package-name>
-```
+When I ask you to plan, build or refactor, think in these phases:
 
-### Running Code
-```bash
-# Run the main script
-python main.py
+1. **v1.1 – Better Offline Model**
+   - Add season + rolling team features (win%, point differential, rest days).
+   - Improve evaluation (log loss, calibration plots, simple model comparison).
 
-# Or using uv
-uv run main.py
-```
+2. **v2 – API**
+   - Expose a `/predict` endpoint using **FastAPI** that returns `p_home_win`.
+   - Input: home team ID, away team ID, optional season/date.
+   - Load the trained model artifact and run inference.
 
-### Jupyter Notebooks
-```bash
-# Start Jupyter
-jupyter notebook
+3. **v3 – UI**
+   - Simple web UI (Streamlit or small React app) that:
+     - Lets me pick teams from dropdowns.
+     - Shows predicted win probability.
+   - Talks to the FastAPI backend (or runs directly against the model for Streamlit).
 
-# Or using uv
-uv run jupyter notebook
-```
+4. **v4 – Product Polish / MLOps-lite**
+   - Clean project structure, type hints, basic tests.
+   - Add logging and a simple config system.
+   - Optional: basic CI workflow (lint + tests) and a simple deployment story.
 
-## Technology Stack
+You don’t have to implement all phases at once, but your plans should always fit into this progression.
 
-Core dependencies (from `pyproject.toml`):
-- `pandas` (2.3.3+) - Data manipulation and analysis
-- `numpy` (2.3.5+) - Numerical computing
-- `scikit-learn` (1.8.0+) - Machine learning models
-- `matplotlib` (3.10.8+) - Data visualization
-- `jupyter` (1.1.1+) - Interactive notebooks
-- `ipykernel` (7.1.0+) - Jupyter kernel support
-- `joblib` (1.5.3+) - Model persistence and caching
-- `pyarrow` (22.0.0+) - Fast data serialization
+---
 
-## Architecture Notes
+## 3. How to Behave in **Plan Mode**
 
-The project implements a baseline NBA game predictor using Logistic Regression:
+When I switch you to Plan mode or ask things like *“plan next steps”*, follow these rules:
 
-- **Package structure**: `src/nba_predictor/` contains all core modules
-- **Data pipeline**: Time-based train/test split to prevent data leakage
-- **Model**: Logistic Regression with one-hot encoded team IDs
-- **Evaluation**: Log Loss (primary), ROC AUC, Accuracy (secondary)
-- **Notebooks**: Interactive EDA and training demonstrations in `notebooks/`
+1. **Scan before planning**
+   - Look at `PRD.md`, `pyproject.toml`, and current `src/` + `notebooks/` to see what already exists.
+   - Assume the project runs with `uv` (`uv run ...`).
 
-## Implementation Notes
+2. **Output a structured plan (no code yet)**
+   - Use this structure exactly:
 
-### Data Pipeline
+     ```markdown
+     ## Plan
 
-**Preprocessing command**:
-```bash
-uv run python -m nba_predictor.data_prep
-```
+     ### 1. Objective of this work block
+     - One or two sentences.
 
-**What it does**:
-- Loads raw CSV from `data/raw/games.csv`
-- Creates `home_win` label (1 if home points > away points, else 0)
-- Sorts by date and splits: earliest 80% train, most recent 20% test
-- Validates: `max(train dates) < min(test dates)` to prevent leakage
-- Saves processed data to `data/processed/` as parquet files
+     ### 2. Subtasks (1–2h each)
+     - [ ] Task 1
+     - [ ] Task 2
+     - [ ] Task 3
+     ```
 
-**Critical**: Date sorting happens BEFORE split to prevent data leakage
+   - Subtasks must be concrete and small enough that I can ask you to execute them one by one.
 
-### Model Training
+3. **Be explicit about files and changes**
+   - For each subtask, mention:
+     - which files will be created or edited,
+     - what responsibilities each file should have.
 
-**Training command**:
-```bash
-uv run python -m nba_predictor.train_baseline
-```
+4. **Think sequentially**
+   - Order tasks so that:
+     - data/schema changes come before training,
+     - training comes before API integration,
+     - API comes before UI.
 
-**What it does**:
-- Loads processed train/test data
-- Creates sklearn Pipeline: OneHotEncoder → LogisticRegression
-- Trains on team IDs only (baseline approach)
-- Evaluates against naive baselines (always home, constant prob)
-- Prints metrics comparison
-- Saves model to `models/baseline.joblib`
+5. **Keep trade-offs in mind**
+   - Prefer simple, reliable solutions over complex ones.
+   - Explicitly call out “nice-to-have” vs “must-have” in the plan when relevant.
 
-**Success criteria**: Model log loss < baseline log losses
+---
 
-### Making Predictions
+## 4. How to Behave in **Execution Mode**
 
-```python
-from nba_predictor import load_model, predict_proba
+When I say something like *“Let’s do Task 1 now”* or *“Implement this plan”*:
 
-model = load_model()
-prob = predict_proba(model, home_team_id=1610612747, visitor_team_id=1610612738)
-print(f"Home win probability: {prob:.3f}")
-```
+1. **Focus on one subtask at a time.**
+2. Start by briefly restating which subtask you’re doing.
+3. Then show the code changes only for that subtask:
+   - Provide full file contents when it’s simpler,
+   - Or diff-style snippets if the file is large.
+4. Keep explanations short and practical (what you changed and why).
+5. Assume I will run:
+   - `uv run python -m nba_predictor.data_prep`
+   - `uv run python -m nba_predictor.train_baseline`
+   and later API/UI commands, so keep scripts runnable.
 
-### Key Files and Their Roles
+---
 
-- **`src/nba_predictor/config.py`** - All constants and hyperparameters
-  - Change `RANDOM_SEED` for different random splits
-  - Modify `TRAIN_SPLIT_RATIO` to adjust train/test proportion
-  - Update `LOGISTIC_REGRESSION_PARAMS` for hyperparameter tuning
+## 5. Technical Preferences & Constraints
 
-- **`src/nba_predictor/data_prep.py`** - Time-based split implementation
-  - Critical function: `split_data()` - MUST sort by date first
-  - Validation: Asserts no date overlap between train/test
+- Use **Python 3.x**, managed via `uv`.
+- Keep everything in `src/nba_predictor/` as the main package.
+- For v1.1 modelling:
+  - Continue using scikit-learn for now.
+  - Keep the model wrapped in a `Pipeline` so inference is easy.
+- For the API:
+  - Use **FastAPI**.
+  - Avoid over-engineering (no microservices; a single app is enough).
+- For UI:
+  - Prefer **Streamlit** for a quick internal tool,
+  - Or a minimal React front end if needed later.
 
-- **`src/nba_predictor/train_baseline.py`** - Main training pipeline
-  - Creates sklearn Pipeline (handles one-hot encoding + training)
-  - Uses `handle_unknown='ignore'` for unseen teams in production
+---
 
-- **`src/nba_predictor/evaluate.py`** - Metrics and baseline comparisons
-  - Computes Log Loss (primary), ROC AUC, Accuracy
-  - Implements two naive baselines for comparison
+## 6. Communication Style
 
-- **`src/nba_predictor/predict.py`** - Inference interface
-  - `predict_proba()` - Returns probability
-  - `predict_winner()` - Returns 'home' or 'away'
-  - `predict_batch()` - Batch predictions for multiple games
+- Assume I’m a capable dev but want guidance and structure.
+- Avoid generic theory unless it directly affects a decision.
+- When there are multiple options, propose 1–2, recommend 1, and say why.
 
-### Testing Approach
+---
 
-**Manual validation checklist**:
-1. Check train/test date ranges don't overlap (printed during preprocessing)
-2. Verify home win rate is ~55-60% (typical NBA home advantage)
-3. Ensure model log loss < both baselines (printed during training)
-4. Re-run training and verify identical metrics (reproducibility)
+### When I say: “Plan next steps for v1.1”  
+→ You should produce a `## Plan` section focused on improving the offline model (features, evaluation, refactor).
 
-**Expected metrics**:
-- Home win rate: 55-60%
-- Baseline log loss: 0.65-0.68
-- Model log loss: 0.60-0.63 (should beat baselines)
-- Model accuracy: 62-66%
-- ROC AUC: 0.65-0.70
+### When I say: “Plan the API layer”  
+→ You should produce a `## Plan` section focused on designing and implementing the FastAPI service around the existing model.
 
-### Common Issues and Solutions
-
-**Issue**: Dataset missing
-```
-FileNotFoundError: Dataset not found: data/raw/games.csv
-```
-**Solution**: Download from Kaggle: https://www.kaggle.com/datasets/nathanlauga/nba-games
-
-**Issue**: Import errors in notebooks
-```
-ModuleNotFoundError: No module named 'nba_predictor'
-```
-**Solution**: Add `sys.path.append('../src')` at top of notebook
-
-**Issue**: Data leakage detected
-```
-AssertionError: Data leakage detected! Train max date >= Test min date
-```
-**Solution**: This is a bug - check `split_data()` implementation, ensure sorting by date
-
-**Issue**: Model doesn't beat baselines
-**Possible causes**:
-1. Data leakage (check date split validation)
-2. One-hot encoding bug (verify feature names)
-3. Label creation error (verify home_win logic)
-4. Random seed not set (check config.RANDOM_SEED usage)
-
-### Development Workflow
-
-1. **Data exploration**: Use `notebooks/01_eda.ipynb`
-2. **Preprocessing**: Run `data_prep.py` to create train/test splits
-3. **Training**: Run `train_baseline.py` to train and evaluate
-4. **Experimentation**: Use `notebooks/02_train_baseline.ipynb` for interactive analysis
-5. **Prediction**: Use `predict.py` for inference
-
-### Future Improvements (v1.1+)
-
-**Feature engineering**:
-- Add `season` as categorical feature
-- Rolling statistics (must compute from past games only):
-  - Last-10 win percentage
-  - Last-10 point differential
-  - Rest days between games
-- Advanced features: injuries, player stats, lineups
-
-**Model improvements**:
-- Random Forest, XGBoost, LightGBM
-- Neural networks (requires more features)
-- Ensemble methods
-- Hyperparameter tuning with GridSearchCV
-
-**Deployment (v2)**:
-- FastAPI REST endpoint
-- Web UI (Streamlit or React)
-- Docker containerization
-- Automated retraining pipeline
+Use this file as your permanent system prompt for this repo.
