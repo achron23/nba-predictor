@@ -1,33 +1,74 @@
-# Python-generated files
+# -------------------------
+# Python / build artifacts
+# -------------------------
 __pycache__/
-*.py[oc]
+*.py[cod]
+*.so
 build/
 dist/
 wheels/
 *.egg-info
 
-# Virtual environments
-.venv
+# -------------------------
+# Environments / tooling
+# -------------------------
+.venv/
+.uv/
+.python-version
 
-.vscode
+# Editor / IDE
+.vscode/
+.idea/
+*.iml
 
-.claude
+# OS crap
+.DS_Store
+Thumbs.db
 
-
-
-#llm's
+# -------------------------
+# LLM / assistant metadata
+# -------------------------
+.claude/
 .llm/
 
-# Data files (don't commit large datasets)
-data/raw/*.csv
-data/processed/*.parquet
+# -------------------------
+# Secrets / env files
+# -------------------------
+.env
+.env.*
+!*.env.example    # keep example envs tracked
 
-# Model artifacts
-models/*.joblib
-models/*.pkl
+# -------------------------
+# Data / databases
+# -------------------------
+data/raw/
+data/processed/
+data/db/*.db
+*.sqlite
+*.sqlite3
+*.parquet
+*.feather
+*.arrow
 
-# Outputs
+# -------------------------
+# Models / artifacts
+# -------------------------
+models/
+*.joblib
+*.pkl
+
+# -------------------------
+# Outputs / logs / temp
+# -------------------------
 outputs/
+logs/
+*.log
+tmp/
+temp/
+*.tmp
 
-# Jupyter notebook checkpoints
+# -------------------------
+# Notebooks
+# -------------------------
 .ipynb_checkpoints/
+*.ipynb~

@@ -50,7 +50,12 @@ async def load_model():
         logger.info(f"Predictor loaded successfully")
         logger.info(f"Model version: {_predictor.model_version}")
         logger.info(f"Features count: {len(_predictor.feature_cols)}")
-        logger.info(f"Teams in cache: {len(_predictor.team_stats)}")
+
+        # v1.1 has team_stats, v2.0 uses database
+        if hasattr(_predictor, 'team_stats'):
+            logger.info(f"Teams in cache: {len(_predictor.team_stats)}")
+        elif hasattr(_predictor, 'feature_computer'):
+            logger.info(f"Using database feature computer")
 
     except Exception as e:
         logger.error(f"Failed to load predictor: {e}")

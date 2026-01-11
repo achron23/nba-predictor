@@ -94,3 +94,54 @@ TEST_FEATURES_FILE = PROCESSED_DATA_DIR / "test_features.parquet"
 
 # v1.1 Model path
 MODEL_V1_1_PATH = MODELS_DIR / "model_v1_1.joblib"
+
+# ==========================================
+# v2.0 CONFIGURATION (Real-time data)
+# ==========================================
+
+# Database
+DB_DIR = PROJECT_ROOT / "data" / "db"
+DB_PATH = DB_DIR / "nba_predictor.db"
+
+# balldontlie.io API
+BALLDONTLIE_API_BASE_URL = "https://api.balldontlie.io/v1"
+BALLDONTLIE_API_KEY_ENV_VAR = "BALLDONTLIE_API_KEY"
+BALLDONTLIE_API_TIMEOUT = 10  # seconds
+BALLDONTLIE_API_MAX_RETRIES = 3
+BALLDONTLIE_FREE_TIER_RATE_LIMIT = 5  # requests per minute
+
+# v2.0 Feature groups (NO shooting stats)
+V2_0_FEATURE_GROUPS = {
+    'baseline': ['home_team_id', 'visitor_team_id'],  # balldontlie team IDs
+    'season': ['season'],
+    'rolling_record': ['home_win_pct_L10', 'away_win_pct_L10'],
+    'rolling_performance': ['home_pt_diff_L10', 'away_pt_diff_L10'],  # Only pt diff, no shooting stats
+    'rest': ['home_rest_days', 'away_rest_days', 'home_back_to_back', 'away_back_to_back'],
+    'streak': ['home_win_streak', 'away_win_streak'],
+    'h2h': ['home_h2h_win_pct', 'home_h2h_pt_diff']
+}
+
+# v2.0 Feature columns (flattened)
+V2_0_FEATURE_COLS = (
+    V2_0_FEATURE_GROUPS['baseline'] +
+    V2_0_FEATURE_GROUPS['season'] +
+    V2_0_FEATURE_GROUPS['rolling_record'] +
+    V2_0_FEATURE_GROUPS['rolling_performance'] +
+    V2_0_FEATURE_GROUPS['rest'] +
+    V2_0_FEATURE_GROUPS['streak'] +
+    V2_0_FEATURE_GROUPS['h2h']
+)
+
+# v2.0 Feature defaults (league averages)
+V2_0_DEFAULT_FEATURES = {
+    'win_pct_L10': 0.5,          # 50% win rate
+    'pt_diff_L10': 0.0,          # Neutral point differential
+    'rest_days': 2.0,            # Typical 2 days rest
+    'back_to_back': 0.0,         # Not back-to-back
+    'win_streak': 0.0,           # No streak
+    'h2h_win_pct': 0.5,          # Neutral H2H
+    'h2h_pt_diff': 0.0,          # Neutral H2H
+}
+
+# v2.0 Model path
+MODEL_V2_0_PATH = MODELS_DIR / "model_v2_0.joblib"
